@@ -801,8 +801,8 @@ map k v = Type extractOut expectedOut
 
 {-| Decode a @Prelude.Map.Entry@ to a tuple
 
->>> input (mapEntry strictText natural) "{ mapKey = "foo", mapValue = 3 }"
-("foo", 3)
+>>> input (mapEntry strictText natural) "{ mapKey = \"foo\", mapValue = 3 }"
+("foo",3)
 -}
 mapEntry :: Type k -> Type v -> Type (k, v)
 mapEntry k v = Type extractOut expectedOut
