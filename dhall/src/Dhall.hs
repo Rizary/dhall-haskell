@@ -117,6 +117,7 @@ import Data.Fix (Fix(..))
 import Data.Functor.Contravariant (Contravariant(..), (>$<), Op(..))
 import Data.Functor.Contravariant.Divisible (Divisible(..), divided)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Map (Map)
 import Data.Monoid ((<>))
 import Data.Scientific (Scientific)
 import Data.Semigroup (Semigroup)
@@ -784,6 +785,35 @@ list = fmap Data.Foldable.toList . sequence
 -}
 vector :: Type a -> Type (Vector a)
 vector = fmap Data.Vector.fromList . list
+
+{-| Decode a `Map`
+
+-}
+map :: Ord k => Type k -> Type v -> Type (Map k v)
+map k v = Type extractOut expectedOut
+  where
+    extractOut (ListLit _ xs) = undefined
+    extractOut expr           = typeError expectedOut expr
+
+    expectedOut = App List (expected entry)
+
+    entry = mapEntry k v
+
+{-| Decode a @Prelude.Map.Entry@ to a tuple
+
+>>> input (mapEntry strictText natural) "{ mapKey = "foo", mapValue = 3 }"
+("foo", 3)
+-}
+mapEntry :: Type k -> Type v -> Type (k, v)
+mapEntry k v = Type extractOut expectedOut
+  where
+    extractOut (RecordLit kvs)
+        | Just key <- Dhall.Map.lookup "mapKey" kvs
+        , Just value <- Dhall.Map.lookup "mapValue" kvs
+            = liftA2 (,) (extract k key) (extract v value)
+    extractOut expr = typeError expectedOut expr
+
+    expectedOut = Record (Dhall.Map.fromList [("mapKey", expected k), ("mapValue", expected v)])
 
 {-| Decode @()@ from an empty record.
 
