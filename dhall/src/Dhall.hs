@@ -71,6 +71,8 @@ module Dhall
     , sequence
     , list
     , vector
+    , Dhall.map
+    , mapEntry
     , unit
     , string
     , pair
@@ -143,6 +145,7 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable
 import qualified Data.Functor.Compose
 import qualified Data.Functor.Product
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.List.NonEmpty
 import qualified Data.Semigroup
@@ -788,16 +791,14 @@ vector = fmap Data.Vector.fromList . list
 
 {-| Decode a `Map`
 
+Later @mapValue@s for the same @mapKey@ override earlier ones.
+
+>>> input (Dhall.map strictText bool) "[ { mapKey = \"foo\", mapValue = True } ]"
+fromList [("foo",True)]
+
 -}
 map :: Ord k => Type k -> Type v -> Type (Map k v)
-map k v = Type extractOut expectedOut
-  where
-    extractOut (ListLit _ xs) = undefined
-    extractOut expr           = typeError expectedOut expr
-
-    expectedOut = App List (expected entry)
-
-    entry = mapEntry k v
+map k v = fmap Data.Map.fromList (list (mapEntry k v)) -- or throw ExtractError in case of duplicate keys?
 
 {-| Decode a @Prelude.Map.Entry@ to a tuple
 
